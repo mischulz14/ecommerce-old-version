@@ -22,7 +22,7 @@ export default function Products() {
   function handleFilter(event) {
     event.preventDefault();
 
-    const arrayCopy = [...props.origamiFigures];
+    const arrayCopy = [...origamiFigures];
 
     const difficultyAndPriceFilteredArray = arrayCopy
       .filter((origami) => origami.price <= parseInt(filteredPrice))
@@ -110,7 +110,7 @@ export default function Products() {
                 onClick={() => {
                   setFilteredPrice('30');
                   setFilteredDifficulty('10');
-                  setFilteredProducts(props.origamiFigures);
+                  setFilteredProducts(origamiFigures);
                 }}
               >
                 Remove filters
