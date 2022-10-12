@@ -163,11 +163,11 @@ const Cart = () => {
         <div className="relative flex items-center justify-center mt-14">
           <Link href="/checkout">
             <button
-              onClick={() => {
-                productContext.setTotalPrice(
-                  getTotalCost(productContext.chosenProducts),
-                );
-              }}
+              // onClick={() => {
+              //   productContext.setTotalPrice(
+              //     getTotalCost(productContext.chosenProducts),
+              //   );
+              // }}
               data-test-id="cart-checkout"
               className="mb-8 scale-110 btn-primary hover:scale-125 checkout "
             >
