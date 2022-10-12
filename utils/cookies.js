@@ -50,7 +50,43 @@ export function handleCookieChange(key, product, increase) {
   const currentCookieValue = getParsedCookie(key);
 
   if (!currentCookieValue) {
-    setStringifiedCookie(key, [{ id: product.id, count: product.count }]);
+    setStringifiedCookie(key, [
+      {
+        id: product.id,
+        activePicture: product.activePicture,
+        count: product.count,
+      },
+    ]);
+  } else {
+    const foundCookie = currentCookieValue.find(
+      (cookiesObject) => cookiesObject.id === product.id,
+    );
+
+    if (!foundCookie) {
+      currentCookieValue.push({
+        id: product.id,
+        activePicture: product.activePicture,
+        count: product.count,
+      });
+    } else {
+      increaseOrDecrease(foundCookie);
+    }
+
+    setStringifiedCookie(key, currentCookieValue);
+  }
+}
+
+export function addCookie(key, product) {
+  const currentCookieValue = getParsedCookie(key);
+
+  if (!currentCookieValue) {
+    setStringifiedCookie(key, [
+      {
+        id: product.id,
+        activePicture: product.activePicture,
+        count: product.count,
+      },
+    ]);
   } else {
     const foundCookie = currentCookieValue.find(
       (cookiesObject) => cookiesObject.id === product.id,
@@ -60,11 +96,22 @@ export function handleCookieChange(key, product, increase) {
       currentCookieValue.push({
         id: product.id,
         count: product.count,
+        activePicture: product.activePicture,
       });
     } else {
-      increaseOrDecrease(foundCookie);
+      foundCookie.activePicture = product.activePicture;
     }
 
     setStringifiedCookie(key, currentCookieValue);
   }
+}
+
+export function removeCookie(key, product) {
+  const currentCookieValue = getParsedCookie(key);
+
+  const filteredCookie = currentCookieValue.filter(
+    (cookiesObject) => cookiesObject.id !== product.id,
+  );
+
+  setStringifiedCookie(key, filteredCookie);
 }

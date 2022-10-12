@@ -1,6 +1,8 @@
 import Image from 'next/image';
-import { useContext } from 'react';
+import Link from 'next/link';
+import { useContext, useEffect } from 'react';
 import { ProductContext } from '../context/ProductContext';
+import { addCookie, handleCookieChange, removeCookie } from '../utils/cookies';
 import { decreaseCount, increaseCount } from '../utils/count';
 import { getTotalCost } from '../utils/getTotal';
 
@@ -8,28 +10,74 @@ const Cart = () => {
   const productContext = useContext(ProductContext);
 
   return (
-    <div className="max-w-6xl h-[85vh] border-l-2 border-r-2 border-b-2  flex dark:text-white ">
+    <div className="max-w-6xl sm:h-[85vh] border-l-2 border-r-2 border-b-2 sm:flex-initial sm:flex-row flex flex-col  dark:text-white ">
       <div className="border-2 chosen-items basis-3/5">
-        <ul className="h-full overflow-y-scroll">
+        <ul className="h-full sm:overflow-y-scroll">
           {productContext.chosenProducts?.map((product) => {
             return (
               <li
                 data-test-id={`cart-product-${product.id}`}
                 key={Math.floor(Math.random() * 1000)}
-                className="relative flex items-center gap-6 p-4 m-4 border-2 grow dark:border-slate-100 dark:bg-slate-700 border-slate-300"
+                className="relative flex-col items-center justify-center gap-6 p-4 m-4 border-2 sm:flex-row sm:flex grow dark:border-slate-100 dark:bg-slate-700 border-slate-300"
               >
-                <div className="image-wrapper">
+                <div className="flex justify-center sm:block image-wrapper">
                   <Image src={product.activePicture} width="100" height="100" />
                 </div>
-                <div className="flex flex-col gap-4 ml-4">
-                  <div className="uppercase">{product.name}</div>
+                <div className="flex justify-center gap-1 py-4 sm:flex-col">
+                  <button
+                    onClick={() => {
+                      // product.activePicture = product.firstPicture;
+                      addCookie('count', product);
+                      productContext.setChosenProducts((prev) => {
+                        const found = prev.find(
+                          (item) => item.id === product.id,
+                        );
+                        if (found) {
+                          found.activePicture = product.firstPicture;
+                          return [...prev];
+                        }
+                        return [...prev, product];
+                      });
+                    }}
+                    className="w-6 h-6 bg-white border-2 rounded-full border-slate-400"
+                  />
+                  <button
+                    onClick={() => {
+                      addCookie('count', product);
+                      productContext.setChosenProducts((prev) => {
+                        const found = prev.find(
+                          (item) => item.id === product.id,
+                        );
+                        if (found) {
+                          found.activePicture = product.secondPicture;
+                          return [...prev];
+                        }
+                        return [...prev, product];
+                      });
+                    }}
+                    className="w-6 h-6 border-2 rounded-full border-slate-400"
+                    style={{ backgroundColor: product.secondColor }}
+                  />
+                </div>
+                <div className="flex flex-col gap-4 mb-2 sm:ml-4 sm:mb-0">
+                  <div className="text-center uppercase">{product.name}</div>
                   <div className="">
                     <div className="flex items-center justify-center gap-2">
                       <button
                         onClick={() => {
                           if (product.count <= 1) return;
                           decreaseCount(product);
-                          productContext.setRenderComponent((prev) => !prev);
+                          handleCookieChange('count', product, false);
+                          productContext.setChosenProducts((prev) => {
+                            const found = prev.find(
+                              (item) => item.id === product.id,
+                            );
+                            if (found) {
+                              found.count--;
+                              return [...prev];
+                            }
+                            return [...prev, product];
+                          });
                         }}
                         className="mt-2 font-bold btn-secondary hover:text-gray-900"
                       >
@@ -43,8 +91,20 @@ const Cart = () => {
                       </div>
                       <button
                         onClick={() => {
-                          increaseCount(product);
-                          productContext.setRenderComponent((prev) => !prev);
+                          productContext.setChosenProducts((prev) => {
+                            const found = prev.find(
+                              (item) => item.id === product.id,
+                            );
+                            if (found) {
+                              found.count++;
+                              return [...prev];
+                            }
+                            return [...prev, product];
+                          });
+                          handleCookieChange('count', product, true);
+                          // productContext.setRenderComponent(
+                          //   (prev: boolean) => !prev,
+                          // );
                         }}
                         className="mt-2 font-bold btn-secondary hover:text-gray-900"
                       >
@@ -53,14 +113,17 @@ const Cart = () => {
                     </div>
                   </div>
                 </div>
-                <div className="ml-auto">Price: {product.price}$</div>
+                <div className="py-4 ml-auto text-center sm:py-0 sm:text-left">
+                  Price: {product.price}$
+                </div>
                 <button
                   data-test-id={`cart-product-remove-${product.id}`}
                   onClick={() => {
+                    removeCookie('count', product);
                     // remove elements from list
                     productContext.setChosenProducts(
                       productContext.chosenProducts.filter(
-                        (item) => item.activePicture !== product.activePicture,
+                        (item) => item.id !== product.id,
                       ),
                     );
                   }}
@@ -73,8 +136,8 @@ const Cart = () => {
           })}
         </ul>
       </div>
-      <div className="overflow-y-scroll border-2 dark:border-slate-100 border-slate-300 price basis-2/5">
-        <ul className="pb-8 border-b-2 dark:border-slate-100 border-slate-300">
+      <div className="border-2 dark:border-slate-100 border-slate-300 price basis-2/5">
+        <ul className="pb-8 overflow-y-scroll border-b-2 dark:border-slate-100 border-slate-300 h-[300px]">
           <h2 className="m-8 text-2xl font-semibold text-center">Summary:</h2>
           {productContext.chosenProducts.map((product) => {
             return (
@@ -85,7 +148,7 @@ const Cart = () => {
                 <span className="font-semibold">{product.name}</span>
                 <span>Quantity: {product.count}</span>
                 <span className="font-semibold">
-                  Price: {product.activePrice}
+                  Price: {product.count * product.price}
                 </span>
               </li>
             );
@@ -97,13 +160,20 @@ const Cart = () => {
         >
           Total Price: {getTotalCost(productContext.chosenProducts)}
         </div>
-        <div className="flex items-center justify-center mt-14">
-          <button
-            data-test-id="cart-checkout"
-            className="mb-8 scale-110 btn-primary hover:scale-125"
-          >
-            Checkout
-          </button>
+        <div className="relative flex items-center justify-center mt-14">
+          <Link href="/checkout">
+            <button
+              onClick={() => {
+                productContext.setTotalPrice(
+                  getTotalCost(productContext.chosenProducts),
+                );
+              }}
+              data-test-id="cart-checkout"
+              className="mb-8 scale-110 btn-primary hover:scale-125 checkout "
+            >
+              Checkout
+            </button>
+          </Link>
         </div>
       </div>
     </div>

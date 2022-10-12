@@ -1,11 +1,11 @@
 import Head from 'next/head';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { ProductContext } from '../../context/ProductContext';
 import { ThemeContext } from '../../context/ThemeContext';
 import origamiFigures from '../../data/data';
-import { handleCookieChange } from '../../utils/cookies';
+import { addCookie, handleCookieChange } from '../../utils/cookies';
 import { decreaseCount, increaseCount } from '../../utils/count';
 import { showUserMessage } from '../../utils/userMessage';
 
@@ -15,38 +15,59 @@ export default function Products() {
   const [filteredPrice, setFilteredPrice] = useState('30');
   const [filteredDifficulty, setFilteredDifficulty] = useState('10');
   const [userMessage, setUserMessage] = useState('Added to cart!');
+  const [showFilter, setShowFilter] = useState(false);
   const themeContext = useContext(ThemeContext);
   const productContext = useContext(ProductContext);
 
   function handleFilter(event) {
     event.preventDefault();
 
-    const arrayCopy = [...origamiFigures];
+    const arrayCopy = [...props.origamiFigures];
 
     const difficultyAndPriceFilteredArray = arrayCopy
-      .filter((origami) => origami.price <= filteredPrice)
-      .filter((origami) => origami.difficulty <= filteredDifficulty);
+      .filter((origami) => origami.price <= parseInt(filteredPrice))
+      .filter((origami) => origami.difficulty <= parseInt(filteredDifficulty));
 
     // ? why doesn't this work with === ?
 
     setFilteredProducts(difficultyAndPriceFilteredArray);
+    setShowFilter(false);
   }
 
   function productAlreadyInCart(product) {
     return productContext.chosenProducts.find(
-      (origami) => origami.activePicture === product.activePicture,
+      (origami) => origami.id === product.id,
     );
   }
 
   return (
     <>
+      {rendered}
       <Head>
         <title>All Origamis</title>
         <meta name="description" content="list page of origamis" />
       </Head>
-      <div className="flex main__container">
-        <div className="flex flex-col items-center px-4 text-center border-b-2 border-l-2 border-r-2 main__filter-sidebar basis-1/4 border-slate-200">
-          <h1 className="mt-12 mb-6 text-xl font-semibold dark:text-white">
+      {/* FILTER SECTION */}
+      <div className="relative flex flex-col sm:flex-row">
+        <button
+          onClick={() => setShowFilter((prev) => !prev)}
+          className="show-filter-btn absolute top-0 text-center sm:hidden w-[100%] py-2 text-lg  bg-slate-300 dark:bg-slate-900 dark:text-white z-[99] "
+        >
+          <span>FILTERS</span>
+          <span
+            className={`${
+              showFilter ? 'rotate-180' : 'pl-1'
+            } inline-block text-lg font-bold`}
+          >
+            ⬇
+          </span>
+        </button>
+        <div
+          className={`${
+            showFilter ? 'block appear-height' : 'hidden'
+          } relative flex-col items-center px-4 pb-20 text-center border-b-2 border-l-2 border-r-2 sm:flex main__filter-sidebar basis-1/4 border-slate-200`}
+        >
+          <h1 className="mt-16 mb-6 text-xl font-semibold dark:text-white">
             Filters
           </h1>
           <form
@@ -63,7 +84,7 @@ export default function Products() {
               min="0"
               max="30"
               onChange={(event) => {
-                setFilteredPrice(parseInt(event.currentTarget.value));
+                setFilteredPrice(event.currentTarget.value);
               }}
               value={filteredPrice}
             />
@@ -76,29 +97,31 @@ export default function Products() {
               min="0"
               max="10"
               onChange={(event) => {
-                setFilteredDifficulty(parseInt(event.currentTarget.value));
+                setFilteredDifficulty(event.currentTarget.value);
               }}
               value={filteredDifficulty}
             />
-
-            <button className="mt-8 btn-primary dark:bg-white dark:text-gray-900">
-              Apply filters
-            </button>
-            <button
-              className="btn-secondary w-[140px] dark:hover:bg-slate-800 mt-4"
-              onClick={() => {
-                setFilteredPrice('30');
-                setFilteredDifficulty('10');
-                setFilteredProducts(origamiFigures);
-              }}
-            >
-              Remove filters
-            </button>
+            <div className="flex flex-col items-center justify-center btn-container">
+              <button className="mt-8 btn-primary dark:bg-white dark:text-gray-900">
+                Apply filters
+              </button>
+              <button
+                className="btn-secondary w-[140px] dark:hover:bg-slate-800 mt-4"
+                onClick={() => {
+                  setFilteredPrice('30');
+                  setFilteredDifficulty('10');
+                  setFilteredProducts(props.origamiFigures);
+                }}
+              >
+                Remove filters
+              </button>
+            </div>
           </form>
         </div>
         <div>
-          <div className="main__product-content basis-3/4 flex flex-col gap-6 p-8 h-[85vh] overflow-y-scroll border-slate-200 border-b-2">
-            <h1 className="text-xl font-light text-center dark:text-white">
+          {/* MAIN PRODUCT SECTION */}
+          <div className="main__product-content basis-3/4 flex flex-col gap-6 p-8 max-h-[90vh] overflow-y-scroll border-slate-200 border-b-2">
+            <h1 className="mt-8 text-xl font-light text-center dark:text-white sm:mt-0">
               PICK YOUR ORIGAMI
             </h1>
             <div>
@@ -211,6 +234,7 @@ export default function Products() {
                               showUserMessage(eventTarget);
                               return;
                             } else {
+                              addCookie('count', product);
                               setUserMessage('Item added to cart!');
                               showUserMessage(eventTarget);
                               productContext.setChosenProducts([
